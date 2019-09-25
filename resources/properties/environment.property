@@ -1,0 +1,5 @@
+# Path
+environment.path = "/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+# maven home (path to maven root path)
+maven.home = ""
