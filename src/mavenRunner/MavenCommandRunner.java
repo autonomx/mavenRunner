@@ -23,10 +23,11 @@ import net.lingala.zip4j.ZipFile;
 
 public class MavenCommandRunner {
 	
-	static String MAVEN_PATH = StringUtils.EMPTY;
-	static String MAVEN_URL = "http://apache.mirror.globo.tech/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.zip";
-	static String MAVEN_DOWNLOAD_DESTINATION = getRootDir() + "../runner/utils/maven/";
+	public static String MAVEN_PATH = StringUtils.EMPTY;
+	public static String MAVEN_URL = "http://apache.mirror.globo.tech/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.zip";
+	public static String MAVEN_DOWNLOAD_DESTINATION = getRootDir() + "../runner/utils/maven/";
 	static String MAVEN_PROPERTY = "maven.home";
+	static String MAVEN_URL_PROPERTY = "maven.url";
 	
 	/**
 	 * process of setting maven:
@@ -64,8 +65,9 @@ public class MavenCommandRunner {
 	/**
 	 * set maven path if set from config file
 	 */
-	private static void setMavenPathFromConfig() {
+	public static void setMavenPathFromConfig() {
 		String path = Config.getValue(MAVEN_PROPERTY);
+		System.out.println("Maven config path: " + path);
 		if(path.isEmpty()) return;
 		
 		File mavenFolderPath = new File(path);
@@ -87,9 +89,15 @@ public class MavenCommandRunner {
 		
 		if (!isMavenDownloaded(mavenDestinationPath)) {
 			
+			// use url from maven property if not set
+			String urlProperty = Config.getValue(MAVEN_URL_PROPERTY);
+			if(!urlProperty.isEmpty())
+				MAVEN_URL = urlProperty;
+			
 	    	System.out.println("<<Downloading maven... + MAVEN_URL +>>");
 			// delete folder first
-			mavenDestinationPath.delete();
+			FileUtils.deleteDirectory(mavenDestinationPath);
+
 		    // create directory
 			mavenDestinationPath.mkdir();
 		    // download
@@ -159,7 +167,7 @@ public class MavenCommandRunner {
 		String[] resultArray = resultsString.split(",");
 		for(String result : resultArray) {
 			if(result.contains("Maven home:")) {
-				MAVEN_PATH = result.split(":")[1];
+				MAVEN_PATH = result.split(":")[1].trim();
 			}
 		}
 		System.out.println("maven path: " + MAVEN_PATH);
