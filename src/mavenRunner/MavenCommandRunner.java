@@ -94,7 +94,7 @@ public class MavenCommandRunner {
 			if(!urlProperty.isEmpty())
 				MAVEN_URL = urlProperty;
 			
-	    	System.out.println("<<Downloading maven... + MAVEN_URL +>>");
+	    	System.out.println("<<Downloading maven... " + MAVEN_URL + ">>");
 			// delete folder first
 			FileUtils.deleteDirectory(mavenDestinationPath);
 

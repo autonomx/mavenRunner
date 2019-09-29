@@ -1,0 +1,10 @@
+/target/
+/extentReport/
+/logs/
+/target/
+/test-output/
+/.apt_generated/
+/.idea/workspace.xml
+/bin/
+/.annotations/
+/.apt_generated_tests/
