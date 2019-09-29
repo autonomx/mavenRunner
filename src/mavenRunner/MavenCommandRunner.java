@@ -138,10 +138,10 @@ public class MavenCommandRunner {
 		File[] fileList = mavenDestinationPath.listFiles();
 		if(fileList == null || fileList.length == 0) return false;
 		
-		for(File file: fileList) {
-			if(file.getName().toLowerCase().contains("maven"))
-				return true;
-		}	
+		String mavenHome = getMavenDownloadHome(mavenDestinationPath);
+		File mavenPath = new File(mavenHome + "bin/mvn");
+		if(mavenPath.exists())
+			return true;
 		return false;
 	}
 	
