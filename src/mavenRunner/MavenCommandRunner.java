@@ -25,7 +25,8 @@ public class MavenCommandRunner {
 
 	public static String MAVEN_PATH = StringUtils.EMPTY;
 	public static String MAVEN_URL = "http://apache.mirror.globo.tech/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.zip";
-	public static String MAVEN_DOWNLOAD_DESTINATION = getRootDir() + "maven" + File.separator;
+	public static String MAVEN_DOWNLOAD_DESTINATION = getRootDir()+ ".." + File.separator + "runner" + File.separator + "utils" + File.separator + "maven" + File.separator;
+
 	static String MAVEN_PROPERTY = "maven.home";
 	static String MAVEN_URL_PROPERTY = "maven.url";
 
@@ -102,10 +103,11 @@ public class MavenCommandRunner {
 			// create directory
 			mavenDestinationPath.mkdir();
 			// download
-			String zipPath = mavenDestinationPath + "maven.zip";
+			String zipPath = mavenDestinationPath.getAbsolutePath() + File.separator + "download.zip";
 			FileUtils.copyURLToFile(new URL(MAVEN_URL), new File(zipPath));
 			// unzip
 			new ZipFile(zipPath).extractAll(MAVEN_DOWNLOAD_DESTINATION);
+			FileUtils.forceDelete(new File(zipPath));
 		}
 
 		// set maven home path
