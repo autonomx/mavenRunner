@@ -109,7 +109,9 @@ public class MavenCommandRunner {
 		}
 
 		// set maven home path
-		MAVEN_PATH = MAVEN_DOWNLOAD_DESTINATION + getMavenDownloadHome(mavenDestinationPath);
+		String mavenPath = MAVEN_DOWNLOAD_DESTINATION + getMavenDownloadHome(mavenDestinationPath);
+		System.out.println("Setting maven path to: " + mavenPath);
+		MAVEN_PATH = mavenPath;
 	}
 
 	/**
