@@ -25,7 +25,7 @@ public class MavenCommandRunner {
 	
 	public static String MAVEN_PATH = StringUtils.EMPTY;
 	public static String MAVEN_URL = "http://apache.mirror.globo.tech/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.zip";
-	public static String MAVEN_DOWNLOAD_DESTINATION = getRootDir() + "../runner/utils/maven/";
+	public static String MAVEN_DOWNLOAD_DESTINATION = getRootDir() + "maven" + File.separator;
 	static String MAVEN_PROPERTY = "maven.home";
 	static String MAVEN_URL_PROPERTY = "maven.url";
 	
@@ -139,7 +139,7 @@ public class MavenCommandRunner {
 		if(fileList == null || fileList.length == 0) return false;
 		
 		String mavenHome = getMavenDownloadHome(mavenDestinationPath);
-		File mavenPath = new File(mavenHome + "bin/mvn");
+		File mavenPath = new File(mavenDestinationPath.getAbsolutePath() + File.separator + mavenHome + File.separator + "bin"+ File.separator + "mvn");
 		if(mavenPath.exists())
 			return true;
 		return false;
@@ -327,8 +327,8 @@ public class MavenCommandRunner {
 
 		if(isFileInFolderPath(currentWorkingDir, "pom.xml"))
 			root = currentWorkingDir;
-		else if(isFileInFolderPath(new File("../"), "pom.xml")) {
-			root = new File("../");
+		else if(isFileInFolderPath(new File(".."), "pom.xml")) {
+			root = new File("..");
 		}	
 		return root.getAbsolutePath() + File.separator;
 	}
