@@ -166,6 +166,10 @@ public class MavenCommandRunner {
 		// if maven path is set using config, skip
 		if (!MAVEN_PATH.isEmpty())
 			return;
+		
+		// if maven is downloaded in utility, return
+		File mavenDestinationPath = new File(MAVEN_DOWNLOAD_DESTINATION);
+		if (isMavenDownloaded(mavenDestinationPath)) return;
 
 		ArrayList<String> results = excuteCommand("mvn -version");
 		System.out.println("maven -version results: " + results);
@@ -209,35 +213,38 @@ public class MavenCommandRunner {
 	 * 
 	 * @param cmd
 	 * @return
-	 */
-	private static ArrayList<String> runCommand(String... cmd) {
+	 */	
+	public static ArrayList<String> runCommand(String... command) {
 		ArrayList<String> results = new ArrayList<String>();
-		Process pr = null;
-		boolean success = false;
-		int retry = 3;
 
-		do {
-			retry--;
-			try {
-				Runtime run = Runtime.getRuntime();
-				pr = run.exec(cmd);
-				pr.waitFor();
-				BufferedReader buf = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-				String line;
-				while ((line = buf.readLine()) != null) {
-					results.add(line);
-				}
-				success = true;
-			} catch (Exception e) {
-				System.out.println("shell command:  '" + cmd + "' output: " + e.getMessage());
-			} finally {
-				if (pr != null)
-					pr.destroy();
-			}
-		} while (!success && retry > 0);
-		if (results.isEmpty())
+	    try {
+	        ProcessBuilder builder = new ProcessBuilder(command);
+	        // Share standard input/output/error descriptors with Java process...
+	        builder.inheritIO();
+	        // ... except standard output, so we can read it with getInputStream().
+	        builder.redirectOutput(ProcessBuilder.Redirect.PIPE);
+
+	        Process p = builder.start();
+
+	        try (BufferedReader reader =
+	            new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+
+	            String line = "";
+	            while ((line = reader.readLine()) != null) {
+	            	results.add(line);
+	            }
+	        }
+
+	        p.waitFor();
+
+	    } catch (IOException | InterruptedException e) {
+			System.out.println("command:  '" + command + "' output: " + e.getMessage());
+	    }
+	    
+	    if (results.isEmpty())
 			System.out.println(
-					"shell command:  '" + Arrays.toString(cmd) + "' did not return results. please check your path: ");
+					"command:  '" + Arrays.toString(command) + "' did not return results. please check your path at resourced -> properties -> environment.property");
+
 		return results;
 	}
 
@@ -296,7 +303,7 @@ public class MavenCommandRunner {
 		Invoker invoker = new DefaultInvoker();
 
 		// get maven home path (root path of maven)
-		File mavenFile = verifyAndGetMavenHomePath();
+		File mavenFile = GetAndVerifyMavenHomePath();
 
 		System.out.println("runMavenInvoker: " + MAVEN_PATH);
 		invoker.setMavenHome(mavenFile);
@@ -318,7 +325,7 @@ public class MavenCommandRunner {
 	 * 
 	 * @return
 	 */
-	private static File verifyAndGetMavenHomePath() {
+	private static File GetAndVerifyMavenHomePath() {
 
 		File mavenFolderPath = new File(MAVEN_PATH.trim());
 		if (isFileInFolderPath(mavenFolderPath, "bin")) {

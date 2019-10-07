@@ -8,40 +8,36 @@
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<resources>
-     <resource>
+			<resource>
 				<directory>${project.basedir}/resources</directory>
-	    </resource>
-	   </resources>
-	   
-	   
-	   
-	   
+			</resource>
+		</resources>
+
+
 		<plugins>
-		
-		
-		<plugin>
-    <artifactId>maven-assembly-plugin</artifactId>
-    <executions>
-      <execution>
-        <phase>package</phase>
-        <goals>
-          <goal>single</goal>
-        </goals>
-      </execution>
-    </executions>
-    <configuration>
-      <archive>
-        <manifest>
-          <addClasspath>true</addClasspath>
-          <mainClass>mavenRunner.MavenCommandRunner</mainClass>
-        </manifest>
-      </archive>
-      <descriptorRefs>
-        <descriptorRef>jar-with-dependencies</descriptorRef>
-      </descriptorRefs>
-    </configuration>
-  </plugin> 
-		
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>mavenRunner.MavenCommandRunner</mainClass>
+						</manifest>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+			</plugin>
+
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.7.0</version>
@@ -60,22 +56,22 @@
 		</dependency>
 
 
-			<!-- https://mvnrepository.com/artifact/org.apache.maven.shared/maven-invoker -->
+		<!-- https://mvnrepository.com/artifact/org.apache.maven.shared/maven-invoker -->
 		<dependency>
-		    <groupId>org.apache.maven.shared</groupId>
-		    <artifactId>maven-invoker</artifactId>
-		    <version>3.0.1</version>
+			<groupId>org.apache.maven.shared</groupId>
+			<artifactId>maven-invoker</artifactId>
+			<version>3.0.1</version>
 		</dependency>
-		
+
 		<!-- https://mvnrepository.com/artifact/net.lingala.zip4j/zip4j -->
 		<dependency>
-		    <groupId>net.lingala.zip4j</groupId>
-		    <artifactId>zip4j</artifactId>
-		    <version>2.1.4</version>
+			<groupId>net.lingala.zip4j</groupId>
+			<artifactId>zip4j</artifactId>
+			<version>2.1.4</version>
 		</dependency>
 	</dependencies>
-	
-	
-	
-	
+
+
+
+
 </project>
