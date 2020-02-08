@@ -1,10 +1,18 @@
 package mavenRunner;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
+import java.net.Proxy;
 import java.net.URL;
 
 import org.apache.commons.io.FileUtils;
@@ -26,6 +34,7 @@ public class MavenCommandRunner {
 	public static String MAVEN_PATH = StringUtils.EMPTY;
 	public static String MAVEN_URL = "http://apache.mirror.globo.tech/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.zip";
 	public static String MAVEN_DOWNLOAD_DESTINATION = getRootDir()+ ".." + File.separator + "runner" + File.separator + "utils" + File.separator + "maven" + File.separator;
+    private static final int DOWNLOAD_BUFFER = 16 * 1024;
 
 	static String MAVEN_PROPERTY = "maven.home";
 	static String MAVEN_URL_PROPERTY = "maven.url";
@@ -104,7 +113,7 @@ public class MavenCommandRunner {
 			mavenDestinationPath.mkdir();
 			// download
 			String zipPath = mavenDestinationPath.getAbsolutePath() + File.separator + "download.zip";
-			FileUtils.copyURLToFile(new URL(MAVEN_URL), new File(zipPath));
+			copyURLToFile(new URL(MAVEN_URL), new File(zipPath));
 			// unzip
 			new ZipFile(zipPath).extractAll(MAVEN_DOWNLOAD_DESTINATION);
 			FileUtils.forceDelete(new File(zipPath));
@@ -115,6 +124,53 @@ public class MavenCommandRunner {
 		System.out.println("Setting maven path to: " + mavenPath);
 		MAVEN_PATH = mavenPath;
 	}
+	
+	/**
+	 * copy to url
+	 * @param source
+	 * @param destination
+	 * @throws IOException
+	 */
+	public static void copyURLToFile(URL source, File destination) throws IOException {
+		Proxy proxy = null;
+
+		String host = Config.getValue("proxy.host");
+		int port = Config.getIntValue("proxy.port");
+		String username = Config.getValue("proxy.username");
+		String password = Config.getValue("proxy.password");
+
+		if (!username.isEmpty() && !password.isEmpty()) {
+			Authenticator.setDefault(new Authenticator() {
+				@Override
+				public PasswordAuthentication getPasswordAuthentication() {
+					return new PasswordAuthentication(username, password.toCharArray());
+				}
+			});
+		}
+
+		if (!host.isEmpty() && port != -1)
+			proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
+
+		if (proxy == null) {
+			FileUtils.copyURLToFile(source, destination);
+		} else {
+			downloadUsingProxy(source, destination, proxy);
+		}
+	}
+
+    /**
+     */
+    private static void downloadUsingProxy(URL source, File destination, Proxy proxy) throws IOException {
+        try(OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(destination));
+            InputStream inputStream = source.openConnection(proxy).getInputStream()) {
+
+            byte[] buffer = new byte[DOWNLOAD_BUFFER];
+            int len;
+            while ((len = inputStream.read(buffer)) >= 0) {
+                outputStream.write(buffer, 0, len);
+            }
+        }
+    }
 
 	/**
 	 * gets maven downloaded folder name eg. apache-maven-3.6.2
