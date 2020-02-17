@@ -26,6 +26,7 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 
 import ConfigReader.Config;
+import ConfigReader.ProxyDetector;
 import net.lingala.zip4j.ZipFile;
 
 public class MavenCommandRunner {
@@ -41,7 +42,7 @@ public class MavenCommandRunner {
 	final static String PROXY_ENABLED = "proxy.enabled";
 	final static String PROXY_HOST = "proxy.host";
 	final static String PROXY_PORT = "proxy.port";
-	final static String PROXY_MAVEN_PROTOCAL = "proxy.maven.protocal";
+	final static String PROXY_MAVEN_PROTOCAL = "proxy.maven.protocol";
 
 	/**
 	 * process of setting maven: 1. set maven path from config, if exists 2. use mvn
@@ -55,6 +56,9 @@ public class MavenCommandRunner {
 	public static void main(String[] args) throws Exception {
 		System.out.println("Root Path: " + getRootDir());
 
+		boolean isProxy = ProxyDetector.isProxy(MAVEN_URL);
+		System.out.println("<<<<<<<<is proxy set: " + isProxy);
+		
 		// load config properties
 		Config.loadConfig();
 
@@ -117,9 +121,11 @@ public class MavenCommandRunner {
 
 			// create directory
 			mavenDestinationPath.mkdir();
-			// download
+			
+			// download. if proxy enabled, download through proxy
 			String zipPath = mavenDestinationPath.getAbsolutePath() + File.separator + "download.zip";
-			copyURLToFile(new URL(MAVEN_URL), new File(zipPath));
+			downloadFromURL(new URL(MAVEN_URL), new File(zipPath));
+			
 			// unzip
 			new ZipFile(zipPath).extractAll(MAVEN_DOWNLOAD_DESTINATION);
 			FileUtils.forceDelete(new File(zipPath));
@@ -137,7 +143,7 @@ public class MavenCommandRunner {
 	 * @param destination
 	 * @throws IOException
 	 */
-	public static void copyURLToFile(URL source, File destination) throws IOException {
+	public static void downloadFromURL(URL source, File destination) throws IOException {
 		Proxy proxy = null;
 
 		boolean isProxyEnabled = Config.getBooleanValue(PROXY_ENABLED);
@@ -145,7 +151,8 @@ public class MavenCommandRunner {
 		int port = Config.getIntValue(PROXY_PORT);
 		String username = Config.getValue("proxy.username");
 		String password = Config.getValue("proxy.password");
-
+		
+		// set username/password for proxy authenticator
 		if (!username.isEmpty() && !password.isEmpty()) {
 			Authenticator.setDefault(new Authenticator() {
 				@Override
