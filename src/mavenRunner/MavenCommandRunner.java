@@ -14,6 +14,8 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -24,20 +26,22 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 
 import ConfigReader.Config;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 import net.lingala.zip4j.ZipFile;
 
 public class MavenCommandRunner {
 
 	public static String MAVEN_PATH = StringUtils.EMPTY;
-	public static String MAVEN_URL = "http://apache.mirror.globo.tech/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.zip";
+	public static String MAVEN_URL = "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip";
 	public static String MAVEN_DOWNLOAD_DESTINATION = getRootDir()+ ".." + File.separator + "runner" + File.separator + "utils" + File.separator + "maven" + File.separator;
     private static final int DOWNLOAD_BUFFER = 16 * 1024;
 
-	static String MAVEN_PROPERTY = "maven.home";
-	static String MAVEN_URL_PROPERTY = "maven.url";
+	final static String MAVEN_PROPERTY = "maven.home";
+	final static String MAVEN_URL_PROPERTY = "maven.url";
+	
+	final static String PROXY_ENABLED = "proxy.enabled";
+	final static String PROXY_HOST = "proxy.host";
+	final static String PROXY_PORT = "proxy.port";
+	final static String PROXY_MAVEN_PROTOCAL = "proxy.maven.protocal";
 
 	/**
 	 * process of setting maven: 1. set maven path from config, if exists 2. use mvn
@@ -62,13 +66,15 @@ public class MavenCommandRunner {
 
 		// if no maven path found, download in utils folder
 		downloadMavenIfNotExist();
+		
+		String[] command = setMavenCommandProxy(args);
 
 		// run maven invoker. user maven home path
-		boolean isSuccess = runMavenInvoker(args);
+		boolean isSuccess = runMavenInvoker(command);
 
 		// if not successful, run mvn command from shell
 		if (!isSuccess)
-			excuteCommand("mvn " + Arrays.toString(args).replaceAll("^.|.$", ""));
+			excuteCommand("mvn " + command);
 	}
 
 	/**
@@ -134,8 +140,9 @@ public class MavenCommandRunner {
 	public static void copyURLToFile(URL source, File destination) throws IOException {
 		Proxy proxy = null;
 
-		String host = Config.getValue("proxy.host");
-		int port = Config.getIntValue("proxy.port");
+		boolean isProxyEnabled = Config.getBooleanValue(PROXY_ENABLED);
+		String host = Config.getValue(PROXY_HOST);
+		int port = Config.getIntValue(PROXY_PORT);
 		String username = Config.getValue("proxy.username");
 		String password = Config.getValue("proxy.password");
 
@@ -148,20 +155,25 @@ public class MavenCommandRunner {
 			});
 		}
 
+		// set and download through proxy if enabled
 		if (!host.isEmpty() && port != -1)
 			proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
 
-		if (proxy == null) {
-			FileUtils.copyURLToFile(source, destination);
-		} else {
+		System.out.println("downloading maven from: " + source );
+
+		if(isProxyEnabled && proxy !=null) {
+			System.out.println("downloading maven through proxy: host: " + host + " port: " + port );
 			downloadUsingProxy(source, destination, proxy);
 		}
+		else
+			FileUtils.copyURLToFile(source, destination);
 	}
 
     /**
      */
     private static void downloadUsingProxy(URL source, File destination, Proxy proxy) throws IOException {
-        try(OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(destination));
+    	
+    	try(OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(destination));
             InputStream inputStream = source.openConnection(proxy).getInputStream()) {
 
             byte[] buffer = new byte[DOWNLOAD_BUFFER];
@@ -250,18 +262,80 @@ public class MavenCommandRunner {
 	 * @param command
 	 * @return
 	 */
-	protected static ArrayList<String> excuteCommand(String command) {
+	protected static ArrayList<String> excuteCommand(String... command) {
 		System.out.println("<<executing maven command through command line>>");
+		
+		String commandString = getString(command);
+
 
 		ArrayList<String> results = new ArrayList<String>();
 
 		if (isMac() || isUnix()) {
-			results = runCommand(new String[] { "/bin/sh", "-c", command });
+			results = runCommand(new String[] { "/bin/sh", "-c", commandString });
 		} else if (isWindows()) {
-			results = runCommand("cmd /c start " + command);
+			results = runCommand("cmd /c start " + commandString);
 		}
 
 		return results;
+	}
+	
+	/**
+	 * append proxy to maven command if enabled
+	 * @param command
+	 * @return
+	 */
+	public static String[] setMavenCommandProxy(String[] args) {
+		
+		ArrayList<String> commands = new ArrayList<>(Arrays.asList(args));
+		
+		boolean isProxyEnabled = Config.getBooleanValue(PROXY_ENABLED);
+		String host = Config.getValue(PROXY_HOST);
+		int port = Config.getIntValue(PROXY_PORT);
+		String proxyProtocal = Config.getValue(PROXY_MAVEN_PROTOCAL);
+
+		// return if proxy is disabled
+		if(!isProxyEnabled) {
+			String command =  getString(args);
+			System.out.println("maven command: " + command);
+			return args;
+		}
+		
+		switch(proxyProtocal) {
+		case "http":
+			commands.add("-DproxySet=true");
+			commands.add("-Dhttp.proxyHost=" + host);
+			commands.add("-Dhttp.proxyPort=" + port);
+			break;
+		case "https":
+			commands.add("-DproxySet=true");
+			commands.add("-Dhttps.proxyHost=" + host);
+			commands.add("-Dhttps.proxyPort=" + port);	
+			break;
+		case "default":
+			commands.add("-DproxySet=true");
+			commands.add("-DproxyHost=" + host);
+			commands.add("-DproxyPort=" + port);	
+			break;
+		case "none":
+			break;
+		default:
+			break;
+		}
+		
+		String[] commandArr = commands.toArray(new String[commands.size()]);
+		String commandString = getString(commandArr);
+		System.out.println("maven command: " + commandString);
+		return commandArr;
+	}
+	
+	/**
+	 * get string from array separted by space
+	 * @param array
+	 * @return
+	 */
+	public static String getString(String[] array) {
+		String value = Arrays.toString(array).replaceAll("^.|.$", "").replaceAll(","," ");
+		return value;
 	}
 
 	/**
@@ -344,7 +418,7 @@ public class MavenCommandRunner {
 	private static boolean runMavenInvoker(String[] args) {
 
 		ArrayList<String> goals = new ArrayList<String>();
-
+		
 		for (int i = 0; i < args.length; i++) {
 			goals.add(args[i]);
 		}
@@ -361,7 +435,10 @@ public class MavenCommandRunner {
 		// get maven home path (root path of maven)
 		File mavenFile = GetAndVerifyMavenHomePath();
 
+		System.out.println("executing maven command using maven Invoker");
 		System.out.println("runMavenInvoker: " + MAVEN_PATH);
+		System.out.println("maven command: " + Arrays.toString(args));
+		
 		invoker.setMavenHome(mavenFile);
 
 		try {
