@@ -40,9 +40,12 @@ public class MavenCommandRunner {
 	final static String MAVEN_URL_PROPERTY = "maven.url";
 	
 	final static String PROXY_ENABLED = "proxy.enabled";
+	final static String PROXY_AUTO_DETECT = "proxy.auto.detect";
+
 	final static String PROXY_HOST = "proxy.host";
 	final static String PROXY_PORT = "proxy.port";
 	final static String PROXY_MAVEN_PROTOCAL = "proxy.maven.protocol";
+
 
 	/**
 	 * process of setting maven: 1. set maven path from config, if exists 2. use mvn
@@ -56,8 +59,6 @@ public class MavenCommandRunner {
 	public static void main(String[] args) throws Exception {
 		System.out.println("Root Path: " + getRootDir());
 
-		boolean isProxy = ProxyDetector.isProxy(MAVEN_URL);
-		System.out.println("<<<<<<<<is proxy set: " + isProxy);
 		
 		// load config properties
 		Config.loadConfig();
@@ -147,10 +148,14 @@ public class MavenCommandRunner {
 		Proxy proxy = null;
 
 		boolean isProxyEnabled = Config.getBooleanValue(PROXY_ENABLED);
+
 		String host = Config.getValue(PROXY_HOST);
 		int port = Config.getIntValue(PROXY_PORT);
 		String username = Config.getValue("proxy.username");
 		String password = Config.getValue("proxy.password");
+		
+		// set proxy required auto detect
+		ProxyDetector.setProxyAutoDetection(source);
 		
 		// set username/password for proxy authenticator
 		if (!username.isEmpty() && !password.isEmpty()) {
@@ -175,6 +180,7 @@ public class MavenCommandRunner {
 		else
 			FileUtils.copyURLToFile(source, destination);
 	}
+	
 
     /**
      */
