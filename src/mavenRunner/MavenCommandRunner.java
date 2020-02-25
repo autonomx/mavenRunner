@@ -39,12 +39,8 @@ public class MavenCommandRunner {
 	final static String MAVEN_PROPERTY = "maven.home";
 	final static String MAVEN_URL_PROPERTY = "maven.url";
 	
-	final static String PROXY_ENABLED = "proxy.enabled";
-	final static String PROXY_AUTO_DETECT = "proxy.auto.detect";
-
-	final static String PROXY_HOST = "proxy.host";
-	final static String PROXY_PORT = "proxy.port";
-	final static String PROXY_MAVEN_PROTOCAL = "proxy.maven.protocol";
+	public static boolean MAVEN_AUTO_PROXY_SET = false;
+	public static boolean IS_PROXY_ENABLED = false;
 
 
 	/**
@@ -68,6 +64,9 @@ public class MavenCommandRunner {
 
 		// set maven path using mvn -version command
 		setMavenPath();
+		
+		// determine if proxy should be enabled
+		setAutoProxy();
 
 		// if no maven path found, download in utils folder
 		downloadMavenIfNotExist();
@@ -80,6 +79,29 @@ public class MavenCommandRunner {
 		// if not successful, run mvn command from shell
 		if (!isSuccess)
 			excuteCommand("mvn " + command);
+	}
+	
+	/**
+	 * set if proxy should be enabled
+	 * once per suite
+	 * @throws MalformedURLException
+	 */
+	private static void setAutoProxy() throws MalformedURLException {
+		
+		boolean isProxyAutoDetect = Config.getBooleanValue(ProxyDetector.PROXY_AUTO_DETECT);
+		
+		// use url from maven property if not set
+		String urlProperty = Config.getValue(MAVEN_URL_PROPERTY);
+		if (!urlProperty.isEmpty())
+			MAVEN_URL = urlProperty;
+		
+		// set proxy enabled value based on proxy auto detection. if auto detect enabled,
+		// attempt to connect to url with proxy info. if able to connect, enable proxy
+		if(isProxyAutoDetect && !MAVEN_AUTO_PROXY_SET) {
+			IS_PROXY_ENABLED = ProxyDetector.setProxyAutoDetection(new URL(MAVEN_URL));
+			MAVEN_AUTO_PROXY_SET = true;
+		}else if (!isProxyAutoDetect)
+			IS_PROXY_ENABLED = Config.getBooleanValue(ProxyDetector.PROXY_ENABLED);
 	}
 
 	/**
@@ -147,15 +169,10 @@ public class MavenCommandRunner {
 	public static void downloadFromURL(URL source, File destination) throws IOException {
 		Proxy proxy = null;
 
-		boolean isProxyEnabled = Config.getBooleanValue(PROXY_ENABLED);
-
-		String host = Config.getValue(PROXY_HOST);
-		int port = Config.getIntValue(PROXY_PORT);
+		String host = Config.getValue(ProxyDetector.PROXY_HOST);
+		int port = Config.getIntValue(ProxyDetector.PROXY_PORT);
 		String username = Config.getValue("proxy.username");
 		String password = Config.getValue("proxy.password");
-		
-		// set proxy required auto detect
-		ProxyDetector.setProxyAutoDetection(source);
 		
 		// set username/password for proxy authenticator
 		if (!username.isEmpty() && !password.isEmpty()) {
@@ -173,7 +190,7 @@ public class MavenCommandRunner {
 
 		System.out.println("downloading maven from: " + source );
 
-		if(isProxyEnabled && proxy !=null) {
+		if(IS_PROXY_ENABLED && proxy !=null) {
 			System.out.println("downloading maven through proxy: host: " + host + " port: " + port );
 			downloadUsingProxy(source, destination, proxy);
 		}
@@ -299,18 +316,19 @@ public class MavenCommandRunner {
 	 */
 	public static String[] setMavenCommandProxy(String[] args) {
 		
+		// convert args to list
 		ArrayList<String> commands = new ArrayList<>(Arrays.asList(args));
 		
-		boolean isProxyEnabled = Config.getBooleanValue(PROXY_ENABLED);
-		String host = Config.getValue(PROXY_HOST);
-		int port = Config.getIntValue(PROXY_PORT);
-		String proxyProtocal = Config.getValue(PROXY_MAVEN_PROTOCAL);
+		String host = Config.getValue(ProxyDetector.PROXY_HOST);
+		int port = Config.getIntValue(ProxyDetector.PROXY_PORT);
+		String proxyProtocal = Config.getValue(ProxyDetector.PROXY_MAVEN_PROTOCAL);
 
-		// return if proxy is disabled
-		if(!isProxyEnabled) {
-			String command =  getString(args);
-			System.out.println("maven command: " + command);
-			return args;
+		// add parallel maven build
+		commands.add("-T 1C");
+		
+		// if proxy is disabled, set proxy protocal to none
+		if(!IS_PROXY_ENABLED) {
+			proxyProtocal = "none";
 		}
 		
 		switch(proxyProtocal) {
@@ -450,7 +468,7 @@ public class MavenCommandRunner {
 
 		System.out.println("executing maven command using maven Invoker");
 		System.out.println("runMavenInvoker: " + MAVEN_PATH);
-		System.out.println("maven command: " + Arrays.toString(args));
+		System.out.println("maven command for maven invoker: " + Arrays.toString(args));
 		
 		invoker.setMavenHome(mavenFile);
 

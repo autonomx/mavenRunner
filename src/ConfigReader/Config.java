@@ -12,6 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Config {
 
 	private static final String CONFIG_PREFIX = "config.";
+	private static final String CONFIG_PROFILE = "config.profile";
+	private static final String PROFILE_PREFIX = "profile.";
+	
 	public static String RESOURCE_PATH = PropertiesReader.getLocalResourcePath();
 	public static Map<String, Object> CONFIG_READER = new ConcurrentHashMap<String, Object>();
 
@@ -95,19 +98,75 @@ public class Config {
 	public static Map<String, Object> loadConfigProperties() {
 
 		Map<String, Object> config = new ConcurrentHashMap<String, Object>();
+		
 		// get all keys from resource path
 		Map<String, String> propertiesMap = getAllKeys(RESOURCE_PATH);
-		config.putAll(propertiesMap);
+		List<String> configPath = new ArrayList<String>();
+
+		// add config and profile path
+		configPath.addAll(getConfigs(propertiesMap));
+		configPath.addAll(getProfiles(propertiesMap));
 
 		// load config/properties values from entries with "config_" prefix
+		for (String path : configPath) {
+			propertiesMap = getAllKeys(PropertiesReader.getLocalRootPath() + path);
+			config.putAll(propertiesMap);
+		}
+		
+		return config;
+	}
+
+	/**
+	 * get a list of config path from properties.property file prefix: "config.",
+	 * not including profiles: config.profile key
+	 * 
+	 * @param propertiesMap
+	 * @return
+	 */
+	public static List<String> getConfigs(Map<String, String> propertiesMap) {
+
+		List<String> configPath = new ArrayList<String>();
+
+		// get list of profiles from key: config.profile
 		for (Entry<String, String> entry : propertiesMap.entrySet()) {
-			boolean isConfig = entry.getKey().toString().startsWith(CONFIG_PREFIX);
+			String key = entry.getKey().toString();
+			boolean isConfig = key.startsWith(CONFIG_PREFIX) && !key.equals(CONFIG_PROFILE);
 			if (isConfig) {
-				propertiesMap = getAllKeys(PropertiesReader.getLocalRootPath() + entry.getValue());
-				config.putAll(propertiesMap);
+				configPath.add(entry.getValue());
 			}
 		}
-		return config;
+		return configPath;
+	}
+
+	/**
+	 * get the list of profile path specified by config.profile in
+	 * properties.property file multiple profiles can be separated by ","
+	 * 
+	 * @param propertiesMap
+	 * @return
+	 */
+	public static List<String> getProfiles(Map<String, String> propertiesMap) {
+		List<String> profiles = new ArrayList<String>();
+		List<String> profilePath = new ArrayList<String>();
+
+		// get list of profiles from key: config.profile
+		for (Entry<String, String> entry : propertiesMap.entrySet()) {
+			boolean isProfile = entry.getKey().toString().equalsIgnoreCase(CONFIG_PROFILE);
+			if (isProfile) {
+				profiles = new ArrayList<String>(Arrays.asList(entry.getValue().split(",")));
+			}
+		}
+
+		// add profile path to list
+		for (String profile : profiles) {
+			if (propertiesMap.get(PROFILE_PREFIX + profile) == null)
+				System.out.println("profile not found: " + profile
+						+ ". Please add profile to properties.property file as profile." + profile);
+			String path = propertiesMap.get(PROFILE_PREFIX + profile);
+			profilePath.add(path);
+		}
+
+		return profilePath;
 	}
 	
 	/**
