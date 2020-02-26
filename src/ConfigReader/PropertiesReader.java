@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
+
 import mavenRunner.MavenCommandRunner;
 
 public class PropertiesReader {
@@ -24,14 +26,20 @@ public class PropertiesReader {
     */
 	public static List<Properties> Property(String path) throws Exception {
 
-		List<Properties> properties = new ArrayList<Properties>();
-		properties.addAll(getPropertiesByFileType(path, PROPERTIES_TYPE_PROPERTIES));
-		properties.addAll(getPropertiesByFileType(path, PROPERTIES_TYPE_CONF));
-
-		if(getFileList(path).isEmpty()) {
-			System.out.println("path: '" + path + "' does not have any property files, please verify resources/properties.property for correct path");
-			System.exit(0);
+List<Properties> properties = new ArrayList<Properties>();
+		
+		if(new File(path).isFile()) {
+			properties.addAll(getPropertiesByFileType(path, StringUtils.EMPTY));
+		}else {	
+			properties.addAll(getPropertiesByFileType(path, PROPERTIES_TYPE_PROPERTIES));
+			properties.addAll(getPropertiesByFileType(path, PROPERTIES_TYPE_CONF));
+			
+			if(getFileList(path).isEmpty()) {
+				System.out.println("path: '" + path + "' does not have any property files, please verify resources/properties.property for correct path");
+				System.exit(0);
+			}
 		}
+		
 		return properties;
 	}
 
@@ -47,8 +55,15 @@ public class PropertiesReader {
 	 */
 	public static List<Properties> getPropertiesByFileType(String path, String fileType) throws Exception {
 		List<Properties> properties = new ArrayList<Properties>();
+		
+		List<File> files = new ArrayList<File>();
+		
+		if(fileType.isEmpty()) {
+			File file = getFile(path);
+			files.add(file);
+		}else
+			files = getFileListByType(path, fileType);
 
-		List<File> files = getFileListByType(path, fileType);
 
 		for (File file : files) {
 			// get property files
@@ -135,6 +150,23 @@ public class PropertiesReader {
 	}
 	
 	/**
+	 * get file by name
+	 * @param path
+	 * @param filename
+	 * @return
+	 */
+	protected static File getFileByName(String path, String filename) {
+		List<File> files = getFileList(path);
+		for(File file : files) {
+			String simplename = file.getName().split("\\.")[0];
+			if(simplename.equals(filename))
+				return file;
+		}
+		System.out.println("file: <" + filename + "> not found at path: " + path);
+		return null;
+	}
+	
+	/**
 	 * gets the list of files tye: file type. eg. ".csv"
 	 * 
 	 * @return
@@ -151,6 +183,18 @@ public class PropertiesReader {
 			}
 		}
 		return filteredFiles;
+	}
+	
+	/**
+	 * get file from file path
+	 * @param directoryPath
+	 * @return
+	 */
+	protected static File getFile(String directoryPath) {
+		File file = new File(directoryPath);
+		if(!file.exists())
+			System.out.println("test files not found at path: " + directoryPath);
+		return file;
 	}
 	
 	/**
