@@ -26,7 +26,7 @@ public class ProxyDetector {
 		        con.setConnectTimeout(1000);
 		        con.setReadTimeout(1000);
 		        con.setRequestMethod("HEAD");
-		       if (con.getResponseCode() == HttpURLConnection.HTTP_OK)
+		       if (con.getResponseCode() < 400)
 		    	   return true;
 		     	 else
 		     		return false;

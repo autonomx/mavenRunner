@@ -163,9 +163,8 @@ public class Config {
 			if (isProfile && isCorrectLength) {
 				String profile = entry.getKey().split("\\.")[1];
 				// add profile name to value. eg. environment.dev 
-				profiles = new ArrayList<String>(Arrays.asList(entry.getValue().split(",")));
-				profiles = profiles.stream().map(c -> profile + "." + c).collect(Collectors.toList());
-
+				List<String> values = new ArrayList<String>(Arrays.asList(entry.getValue().split(",")));
+				profiles.addAll(values.stream().map(c -> profile + "." + c).collect(Collectors.toList()));
 			}
 		}
 		// property value: profile.environment = dev
@@ -174,6 +173,11 @@ public class Config {
 		for (String profile : profiles) {
 			String profileValue = profile.split("\\.")[0];
 			String propertyFile = profile.split("\\.")[1];
+			
+			// continue to next profile if value set to none
+			if(propertyFile.equals("none"))
+				continue;
+						
 			if (propertiesMap.get(CONFIG_PROFILE_PREFIX + profileValue) == null)
 				System.out.println("profile not found: " + profile
 						+ ". Please add profile to properties.property file as profile." + profile);
@@ -204,14 +208,19 @@ public class Config {
 				String group = entry.getKey().split("\\.")[2];
 				
 				// add group name to value. eg. repot.value
-				profiles = new ArrayList<String>(Arrays.asList(entry.getValue().split(",")));
-				profiles = profiles.stream().map(c -> group + "." + c).collect(Collectors.toList());
-
+				List<String> values = new ArrayList<String>(Arrays.asList(entry.getValue().split(",")));
+				profiles.addAll(values.stream().map(c -> group + "." + c).collect(Collectors.toList()));
 			}
 		}
 
 		// add group path to list
 		for (String profile : profiles) {
+			String value = profile.split("\\.")[1];
+			
+			// continue to next profile if value set to none
+			if(value.equals("none"))
+				continue;
+			
 			if (propertiesMap.get(CONFIG_GROUP_PREFIX + profile) == null)
 				System.out.println("profile not found: " + profile
 						+ ". Please add groups to properties.property file as " + CONFIG_GROUP_PREFIX + profile);
