@@ -1,4 +1,4 @@
-Maven runner is a small project to handle maven download and running
+Maven runner is a small project to handle downloading maven and running maven goals
 
 Download the latest jar: https://github.com/autonomx/mavenRunner/releases/latest/download/maven.jar 
               or as zip: https://github.com/autonomx/mavenRunner/releases/latest/download/maven.zip 
