@@ -1,3 +1,19 @@
-# maven home (path to maven root path)
+# maven home (path to maven root path). set value if not found automatically
+# note: maven needs be the "binary" version
+# eg. windows: "c:\\apache-maven-3.6.3"
 maven.home = ""
-maven.url = "http://apache.mirror.globo.tech/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.zip"
+
+# url to download maven if not found on the system. can find versions at: https://archive.apache.org/dist/maven/maven-3/
+maven.url = "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
+
+# proxy settings:
+# proxy.enabled options: true, false, auto. auto, detects if proxy is required. requires host and port values to be set.
+proxy.auto.detect = false
+proxy.enabled = false
+proxy.host = ""
+proxy.port = ""
+proxy.username = ""
+proxy.password = ""
+
+# protocols: http, https, default, none
+proxy.maven.protocol = default 
