@@ -1,5 +1,7 @@
 Maven runner is a small project to handle maven installation and running
 
+Download the latest jar: https://github.com/autonomx/mavenRunner/releases/latest/download/maven.jar
+
 Installation:
-- Export project as Runnable Jar file
-- Run Jar: java -jar mavenRunner.jar compile
+- Run Jar: java -jar maven.jar <goal>
+       eg. java -jar maven.jar compile
