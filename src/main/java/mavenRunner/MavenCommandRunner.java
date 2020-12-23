@@ -73,7 +73,7 @@ public class MavenCommandRunner {
 		setMavenPath();
 		
 		// determine if proxy should be enabled
-		setAutoProxy();
+		//setAutoProxy();
 
 		// if no maven path found, download in utils folder
 		downloadMavenIfNotExist();
